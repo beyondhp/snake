@@ -1,57 +1,666 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
+<html>
+<head lang="en">
     <meta charset="UTF-8">
-    <title>Snake by beyondhp</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-  </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">Snake</h1>
-      <h2 class="project-tagline">html5贪吃蛇小游戏</h2>
-      <a href="https://github.com/beyondhp/snake" class="btn">View on GitHub</a>
-      <a href="https://github.com/beyondhp/snake/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/beyondhp/snake/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title></title>
+    <style type="text/css">
+        .s{
+            color: rgb(100,100,100);
+        }
+    </style>
+    <!--<script src="js/Astar.js"></script>-->
+</head>
+<body onload="initGame()">
+<div>
+  <canvas id="snake" width="1200" height="510" style="margin-left: auto;margin-right: auto"></canvas>
+    <div style="width:600px;margin-left: auto;margin-right: auto"><input type="button" value="开始游戏" onclick="startGame()">
+        <input type="button" value="暂停游戏" onclick="pauseGame()">
+        <input type="button" value="重新开始" onclick="restartGame()"></div>
+    <div><span id="testmsg"></span></div>
+    <div><span id="testmsg2"></span></div>
+    <div><span id="testmsg3"></span></div>
+</div>
+    <script>
 
-    <section class="main-content">
-      <h3>
-<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+    var mess = document.getElementById("testmsg");
+    if(window.WebSocket){
+        var ws = new WebSocket('ws://120.24.103.49:8001');
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
+        ws.onopen = function(e){
+            console.log("连接服务器成功");
+            ws.send("game2");
+        }
+        ws.onclose = function(e){
+            console.log("服务器关闭");
+        }
+        ws.onerror = function(){
+            console.log("连接出错");
+        }
 
-<h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+        ws.onmessage = function(e){
 
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
+            mess.innerHTML = e.data;
+            var data = parseInt(e.data);
+            if(data>=37 && data<=40)
+                changeDirection(data);
+            if(data==1)
+                startGame();
+            if(data==2)
+                pauseGame();
+            if(data==3)
+                restartGame();
 
-<h3>
-<a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating pages manually</h3>
+        }
+    }
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
 
-<h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+        var width = 500;
+        var height = 500;
+        var bgColor = "#ACD6FF";
+        var lineColor = "#FFFFFF";
+        var snackColor = "green";
+        var foodColor = "red";
+        var init_X = 350;
+        var init_Y = 5;
+        var space =25;
+        var X_num = width / space;
+        var Y_num = height /space;
+        var snakeBody_X = [9,10,11,12];
+        var snakeBody_Y = [10,10,10,10];
+        var food_X = 3;
+        var food_Y = 3;
+        var direction  = 1;
+        var thread;
+        var msg = "";
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+        var snackCanvas = document.getElementById("snake");
+        var ctx = snackCanvas.getContext("2d");
+        ctx.translate(init_X,init_Y);
 
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+        function drawBgColor(){
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0,0,width,height);
+        }
 
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/beyondhp/snake">Snake</a> is maintained by <a href="https://github.com/beyondhp">beyondhp</a>.</span>
+        function drawBgLine(){
+            ctx.strokeStyle = lineColor;
+            for(var i = 0; i <= Math.floor(width/space); i++ ){
+                ctx.beginPath();
+                ctx.moveTo(space*i,0);
+                ctx.lineTo(space*i,height);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            for(var i = 0; i <= Math.floor(height/space); i++ ){
+                ctx.beginPath();
+                ctx.moveTo(0,space*i);
+                ctx.lineTo(width,space*i);
+                ctx.closePath();
+                ctx.stroke();
+            }
+        }
 
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
+        function drawSnack(){
+            //var color;
+            //color = '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
+            ctx.fillStyle = "red";
 
-    </section>
+            ctx.beginPath();
 
-  
-  </body>
+            ctx.arc(snakeBody_X[0]*space+space/2,snakeBody_Y[0]*space+space/2,space/2,0,Math.PI*2,true);
+            ctx.closePath();
+            ctx.fill();
+
+
+            ctx.fillStyle = "blue";
+            for(var i = 1;i<snakeBody_X.length;i++){
+               /* color = '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
+                ctx.fillStyle = color;*/
+                ctx.fillRect(snakeBody_X[i]*space,snakeBody_Y[i]*space,space,space);
+              /*  ctx.beginPath();
+                ctx.arc(snakeBody_X[i]*space+space/2,snakeBody_Y[i]*space+space/2,space/2,0,Math.PI*2,true);
+                ctx.closePath();
+                ctx.fill();*/
+            }
+        }
+
+        function drawFood(){
+
+            var color = '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
+            ctx.fillStyle = color;
+            //ctx.fillStyle = "yellow";
+            ctx.fillRect(food_X*space,food_Y*space,space,space);
+
+            var color = '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(food_X*space+space/2,food_Y*space+space/2,space/2,0,Math.PI*2);
+
+
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawBlock() {
+            for(var i=0;i<map.length;i++) {
+                for(var j=0;j<map[0].length;j++) {
+                    if(map[i][j] == 2) {
+                        ctx.fillStyle = "black";
+                        ctx.fillRect(i*space,j*space,space,space);
+                    }
+                }
+            }
+        }
+
+        function addHead(head_X,head_Y){
+            snakeBody_X.splice(0,0,head_X);
+            snakeBody_Y.splice(0,0,head_Y);
+        }
+
+        function removeTail(){
+            snakeBody_X.pop();
+            snakeBody_Y.pop();
+        }
+
+        function move(){
+            var head_X;
+            var head_Y;
+
+            switch (direction){
+                case 1:
+                    head_X = snakeBody_X[0]-1;
+                    if(head_X < 0)
+                        head_X = X_num-1;
+                    head_Y = snakeBody_Y[0];
+                    break;
+                case 2:
+                    head_X = snakeBody_X[0];
+                    head_Y = snakeBody_Y[0]-1;
+                    if(head_Y < 0)
+                        head_Y = Y_num-1;
+                    break;
+                case 3:
+                    head_X = snakeBody_X[0] + 1;
+                    if(head_X >= X_num)
+                        head_X = 0;
+                    head_Y = snakeBody_Y[0];
+                    break;
+                case 4:
+                    head_X = snakeBody_X[0];
+                    head_Y = snakeBody_Y[0]+1;
+                    if(head_Y >= Y_num)
+                        head_Y = 0;
+                    break;
+
+            }
+            if(isEatFood(head_X,head_Y)){
+                addHead(head_X,head_Y);
+            }else{
+                addHead(head_X,head_Y);
+                removeTail();
+            }
+
+        }
+
+    function changeDirection(data){
+        switch (data){
+            case 37:
+                if(direction != 3)
+                    direction = 1;
+                break;
+            case 38:
+                if(direction != 4)
+                    direction = 2;
+                break;
+            case 39:
+                if(direction != 1)
+                    direction = 3;
+                break;
+            case 40:
+                if(direction != 2)
+                    direction = 4;
+                break;
+        }
+    }
+
+        function changeDirection2(event){
+            event = event || window.event;
+            switch (event.keyCode){
+                case 37:
+                    if(direction != 3)
+                        direction = 1;
+                    break;
+                case 38:
+                    if(direction != 4)
+                        direction = 2;
+                    break;
+                case 39:
+                    if(direction != 1)
+                        direction = 3;
+                    break;
+                case 40:
+                    if(direction != 2)
+                        direction = 4;
+                    break;
+            }
+        }
+
+        function autoRun() {
+            var x = food_X - snakeBody_X[0];
+            var y = food_Y - snakeBody_Y[0];
+            if(x>0 && y>0) {
+                if(direction == 1)
+                    direction = 4;
+                else if(direction == 2)
+                    direction = 3;
+            }else if(x>0 && y<0) {
+                if(direction == 1)
+                    direction = 2;
+                else if(direction == 4)
+                    direction = 3;
+            }else if(x<0 && y>0) {
+                if(direction == 2)
+                    direction = 1;
+                else if(direction == 3)
+                    direction = 4;
+            }else if(x<0 && y<0) {
+                if(direction == 3)
+                    direction = 2;
+                else if(direction == 4)
+                    direction = 1;
+            }
+
+            if(x == 0 && y!= 0) {
+                if(y < 0) {
+                    if(direction != 4)
+                        direction = 2;
+                }else {
+                    if(direction != 2)
+                        direction = 4;
+                }
+            }
+            if(y == 0 && x!= 0) {
+                if(x < 0) {
+                    if(direction != 3)
+                        direction = 1;
+                } else {
+                    if(direction != 1)
+                        direction = 3;
+                }
+            }
+            //document.getElementById("testmsg").innerHTML = "x= "+x+"y= "+y;
+        }
+
+
+        function isEatFood(head_X,head_Y){
+            if (food_X == head_X && food_Y == head_Y){
+                createFood();
+                document.getElementById("testmsg3").innerHTML="new foodX:"+food_X+" foodY:"+food_Y;
+                return true;
+            }else{
+                return false;
+            }
+
+        }
+
+        function createFood(){
+            food_X = Math.floor(Math.random()*X_num);
+            food_Y = Math.floor(Math.random()*Y_num);
+            for(var i=0;i<snakeBody_X.length;i++) {
+                if(food_X == snakeBody_X[i] && food_Y == snakeBody_Y[i]) {
+                    createFood();
+                    break;
+                }
+            }
+        }
+
+        function isEatSelf() {
+            for(var i = 1; i < snakeBody_X.length; i++){
+                if(snakeBody_X[0] == snakeBody_X[i] && snakeBody_Y[0] == snakeBody_Y[i]){
+                    msg = "吃到自己，游戏结束!";
+                    clearInterval(thread);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isOutOfBounds(){
+            if(snakeBody_X[0] < 0 || snakeBody_X[0] > X_num-1 ||
+               snakeBody_Y[0] < 0 || snakeBody_Y[0] > Y_num-1){
+                msg = "出界，游戏结束!";
+                clearInterval(thread);
+                return true;
+            }
+            return false;
+        }
+
+        function run(){
+            ctx.clearRect(-200,-5,width+210,height+100);
+            drawBgColor();
+            drawSnack();
+            //autoRun();
+            //move();
+            aStarRun();
+            move();
+            aStarRun();
+            isEatSelf();
+            //isOutOfBounds();
+
+            drawSnack();
+            //draw();
+            drawFood();
+            drawBlock();
+
+            drawBoard();
+            drawBgLine();
+        }
+        //setInterval(aStarRun,400);
+        //setInterval(move,100);
+
+        var map = [];
+        for(var i=0;i<X_num;i++) {
+            map[i] = [];
+            for(var j=0;j<Y_num;j++) {
+                map[i][j] = 0;
+            }
+        }
+
+    function resetMap() {
+        for(var i=0;i<X_num;i++) {
+            map[i] = [];
+            for(var j=0;j<Y_num;j++) {
+                map[i][j] = 0;
+            }
+        }
+        map[2][2] = 2;
+        map[2][3] = 2;
+        map[2][4] = 2;
+        map[2][5] = 2;
+        map[2][6] = 2;
+
+        map[10][8] = 2;
+        map[11][8] = 2;
+        map[12][8] = 2;
+        map[13][8] = 2;
+        map[14][8] = 2;
+
+        for(var i=0;i<snakeBody_X.length;i++) {
+            map[snakeBody_X[i]][snakeBody_Y[i]] = 1;
+        }
+    }
+        function draw() {
+            for(var i=0;i<snakeBody_X.length;i++) {
+                map[snakeBody_X[i]][snakeBody_Y[i]] = 1;
+            }
+            for(var i=0;i<map.length;i++) {
+                for(var j=0;j<map[0].length;j++) {
+                    if(map[i][j] == 0) {
+                        ctx.fillStyle = "#ACD6FF";
+                    }else if(map[i][j] == 1) {
+                        ctx.fillStyle = "blue";
+                    }
+                    ctx.fillRect(i*space,j*space,space,space);
+                }
+            }
+
+
+        }
+
+        function aStarRun() {
+            resetMap();
+            var resultList = search1(snakeBody_X[0],snakeBody_Y[0],food_X,food_Y);
+            //var resultList2 = search1(snakeBody_X[0],snakeBody_Y[0],snakeBody_X[snakeBody_X.length-1],snakeBody_Y[snakeBody_Y.length-1]);
+
+            /*var str = "";
+            for(var i=0;i<resultList.length;i++) {
+                str += "("+resultList[i].getX()+","+resultList[i].getY()+"), ";
+            }
+            document.getElementById("testmsg").innerHTML = str + "length " +resultList.length;*/
+            var nowX = snakeBody_X[0];
+            var nowY = snakeBody_Y[0];
+            if(resultList.length == 1) {
+                //move();
+            }
+            if(resultList.length > 1) {
+                var nextX = resultList[1].getX();
+                var nextY = resultList[1].getY();
+
+                if(nowX - nextX == 1) {
+                    direction = 1;
+                }else if(nowX - nextX == -1) {
+                    direction = 3;
+                }else if(nowY - nextY == 1) {
+                    direction = 2;
+                }else if(nowY - nextY == -1) {
+                    direction = 4;
+                }
+            }
+        }
+
+        function search1(startX,startY,endX,endY) {
+            var startPoint = new Point(startX,startY,null);
+            var endPoint = new Point(endX,endY,null);
+            document.getElementById("testmsg2").innerHTML ="search1 "+ "("+startPoint.getX() + "," + startPoint.getY()+ ") (" + endPoint.getX() + "," + endPoint.getY() + ")";
+            openList = [];
+            openList.push(startPoint);
+            var resultList = search(startPoint,endPoint);
+            if(resultList.length == 0) {
+                document.getElementById("testmsg").innerHTML ="resultList is 0";
+                //return 0;
+            }
+            return resultList;
+        }
+
+        function initGame(){
+            drawBgColor();
+            drawFood();
+            drawSnack();
+            drawBlock();
+            drawBgLine();
+            drawBoard();
+        }
+
+        function startGame(){
+                thread =setInterval(run,50);
+            //run();
+            document.onkeydown = changeDirection2;
+        }
+
+        function pauseGame(){
+            clearInterval(thread);
+        }
+
+        function restartGame(){
+            snakeBody_X = [16,17,18,19];
+            snakeBody_Y = [10,10,10,10];
+            food_X = 5;
+            food_Y = 10;
+            direction  = 1;
+            msg = "";
+            initGame();
+            thread = setInterval(run,200);
+        }
+
+        function drawBoard(){
+            ctx.fillStyle="lightblue";
+            ctx.fillRect(width+5,0,200,500);
+            ctx.fillStyle="red";
+            ctx.font="25px 宋体";
+            ctx.fillText(msg,width+10,50,190);
+            ctx.fillText("当前长度："+snakeBody_X.length,width+10,150,190);
+        }
+
+
+    function Point(x,y,parentPoint) {
+        this.x = x;
+        this.y = y;
+        this.parentPoint = parentPoint;
+        this.g = 0;
+        this.h = 0;
+        this.f = 0;
+    }
+    Point.prototype.getX = function() {
+        return this.x;
+    };
+    Point.prototype.setX = function(x) {
+        this.x = x;
+    };
+    Point.prototype.getY = function() {
+        return this.y;
+    };
+    Point.prototype.setY = function(y) {
+        this.y = y;
+    };
+    Point.prototype.getParentPoint = function() {
+        return this.parentPoint;
+    };
+    Point.prototype.setParentPoint = function(parentPoint) {
+        this.parentPoint = parentPoint;
+    };
+    Point.prototype.getG = function() {
+        return this.g;
+    };
+    Point.prototype.setG = function(g) {
+        this.g = g;
+    };
+    Point.prototype.getH = function() {
+        return this.h;
+    };
+    Point.prototype.setH = function(h) {
+        this.h = h;
+    };
+    Point.prototype.getF = function() {
+        return this.f;
+    };
+    Point.prototype.setF = function(f) {
+        this.f = f;
+    };
+
+
+
+
+    var openList = [];
+    var closeList = [];
+    var row = map.length;
+    var col = map[0].length;
+
+    /*function search1(startX,startY,endX,endY) {
+     var startPoint = new Point(startX,startY,null);
+     var endPoint = new Point(endX,endY,null);
+     openList.push(startPoint);
+     var resultList = search(startPoint,endPoint);
+     if(resultList.length == 0) {
+     return 0;
+     }
+     for(var i = 0; i < resultList.length; i++) {
+     map[resultList[i].getX()][resultList[i].getY()] = 2;
+     }
+     return 1;
+     }*/
+
+    function search(startPoint,endPoint) {
+        var resultList = [];
+        var isFind = false;
+        var curPoint = null;
+        while(openList.length > 0) {
+            curPoint = openList[0];
+            if(curPoint.getX() == endPoint.getX() && curPoint.getY() == endPoint.getY()) {
+                isFind = true;
+                break;
+            }
+            if(curPoint.getY()-1 >= 0) {
+                checkPath(curPoint.getX(),curPoint.getY()-1,curPoint,endPoint);
+            }
+            if(curPoint.getY()+1 < 20) {
+                checkPath(curPoint.getX(),curPoint.getY()+1,curPoint,endPoint);
+            }
+            if(curPoint.getX()-1 >= 0) {
+                checkPath(curPoint.getX()-1,curPoint.getY(),curPoint,endPoint);
+            }
+            if(curPoint.getX()+1 < 20) {
+                checkPath(curPoint.getX()+1,curPoint.getY(),curPoint,endPoint);
+            }
+            closeList.push(openList.shift());
+            openList.sort(compare);
+        }
+        if(isFind) {
+            getPath(resultList,curPoint);
+        }
+        openList = [];
+        closeList = [];
+        return resultList;
+    }
+
+    function checkPath(x,y,parentPoint,endPoint) {
+        var newPoint = new Point(x,y,parentPoint);
+        if(map[x][y] != 0) {
+            closeList.push(newPoint);
+            return false;
+        }
+        if(isListContains(closeList,x,y) != -1) {
+            return false;
+        }
+        var index = -1;
+        if((index = isListContains(openList,x,y)) != -1) {
+            if(parentPoint.getG()+1 < openList[index].getG()) {
+                newPoint.setParentPoint(parentPoint);
+                countG(newPoint,endPoint);
+                countF(newPoint);
+                openList[index] = newPoint;
+            }
+        }else{
+            newPoint.setParentPoint(parentPoint);
+            count(newPoint,endPoint);
+            openList.push(newPoint);
+        }
+        return true;
+    }
+
+    function isListContains(list,x,y) {
+        for(var i = 0;i < list.length; i++) {
+            if(list[i].getX() == x && list[i].getY() == y) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function getPath(resultList,point) {
+        if(point.getParentPoint() != null) {
+            getPath(resultList,point.getParentPoint());
+        }
+        resultList.push(point);
+    }
+
+    function count(point,endPoint) {
+        countG(point,endPoint);
+        countH(point,endPoint);
+        countF(point);
+    }
+
+    function countG(point,endPoint) {
+        if(point.getParentPoint() == null) {
+            point.setG(1);
+        }else{
+            point.setG(point.getParentPoint().getG()+1);
+        }
+    }
+
+    function countH(point,endPoint) {
+        point.setH(Math.abs(point.getX()-endPoint.getX())+Math.abs(point.getY()-endPoint.getY()))
+    }
+
+    function countF(point) {
+        point.setF(point.getG() + point.getH());
+    }
+
+    function compare(o1,o2) {
+        return o1.getF() - o2.getF();
+    }
+
+    </script>
+</body>
 </html>
