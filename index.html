@@ -23,36 +23,7 @@
 </div>
     <script>
 
-    var mess = document.getElementById("testmsg");
-    if(window.WebSocket){
-        var ws = new WebSocket('ws://120.24.103.49:8001');
-
-        ws.onopen = function(e){
-            console.log("连接服务器成功");
-            ws.send("game2");
-        }
-        ws.onclose = function(e){
-            console.log("服务器关闭");
-        }
-        ws.onerror = function(){
-            console.log("连接出错");
-        }
-
-        ws.onmessage = function(e){
-
-            mess.innerHTML = e.data;
-            var data = parseInt(e.data);
-            if(data>=37 && data<=40)
-                changeDirection(data);
-            if(data==1)
-                startGame();
-            if(data==2)
-                pauseGame();
-            if(data==3)
-                restartGame();
-
-        }
-    }
+    		var mess = document.getElementById("testmsg");
 
 
         var width = 500;
@@ -297,7 +268,6 @@
         function isEatFood(head_X,head_Y){
             if (food_X == head_X && food_Y == head_Y){
                 createFood();
-                document.getElementById("testmsg3").innerHTML="new foodX:"+food_X+" foodY:"+food_Y;
                 return true;
             }else{
                 return false;
@@ -375,17 +345,6 @@
                 map[i][j] = 0;
             }
         }
-        map[2][2] = 2;
-        map[2][3] = 2;
-        map[2][4] = 2;
-        map[2][5] = 2;
-        map[2][6] = 2;
-
-        map[10][8] = 2;
-        map[11][8] = 2;
-        map[12][8] = 2;
-        map[13][8] = 2;
-        map[14][8] = 2;
 
         for(var i=0;i<snakeBody_X.length;i++) {
             map[snakeBody_X[i]][snakeBody_Y[i]] = 1;
@@ -443,7 +402,6 @@
         function search1(startX,startY,endX,endY) {
             var startPoint = new Point(startX,startY,null);
             var endPoint = new Point(endX,endY,null);
-            document.getElementById("testmsg2").innerHTML ="search1 "+ "("+startPoint.getX() + "," + startPoint.getY()+ ") (" + endPoint.getX() + "," + endPoint.getY() + ")";
             openList = [];
             openList.push(startPoint);
             var resultList = search(startPoint,endPoint);
@@ -540,26 +498,12 @@
     };
 
 
-
-
     var openList = [];
     var closeList = [];
     var row = map.length;
     var col = map[0].length;
 
-    /*function search1(startX,startY,endX,endY) {
-     var startPoint = new Point(startX,startY,null);
-     var endPoint = new Point(endX,endY,null);
-     openList.push(startPoint);
-     var resultList = search(startPoint,endPoint);
-     if(resultList.length == 0) {
-     return 0;
-     }
-     for(var i = 0; i < resultList.length; i++) {
-     map[resultList[i].getX()][resultList[i].getY()] = 2;
-     }
-     return 1;
-     }*/
+   
 
     function search(startPoint,endPoint) {
         var resultList = [];
